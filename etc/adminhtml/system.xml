@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="tonyapps_abandonedcart" translate="label" type="text" sortOrder="310" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Abandoned Cart Reminders</label>
+            <tab>sales</tab>
+            <resource>Tonyapps_AbandonedCart::config</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General</label>
+                <comment><![CDATA[Guest carts only qualify once the shopper has typed an email at checkout. Logged-in customers always qualify.]]></comment>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Reminders</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="delays" translate="label comment" type="text" sortOrder="20" showInDefault="1">
+                    <label>Send After (hours)</label>
+                    <comment>Comma-separated, one value per reminder, counted from the last cart change. Example: 1,24,72 sends three reminders.</comment>
+                    <validate>required-entry</validate>
+                </field>
+                <field id="max_age_days" translate="label comment" type="text" sortOrder="30" showInDefault="1">
+                    <label>Ignore Carts Older Than (days)</label>
+                    <comment>Stops the first run after install from emailing every cart the store has ever had.</comment>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                </field>
+            </group>
+            <group id="email" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Email</label>
+                <field id="identity" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Sender</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
+                </field>
+                <field id="template" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+            </group>
+            <group id="coupon" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Coupon</label>
+                <field id="rule_id" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Cart Price Rule</label>
+                    <comment>Only rules with "Use Auto Generation" ticked are listed. Each reminder gets its own single code from that rule, so set the rule's Uses per Coupon to 1.</comment>
+                    <source_model>Tonyapps\AbandonedCart\Model\Config\Source\CouponRule</source_model>
+                </field>
+                <field id="step" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Include Coupon in Reminder #</label>
+                    <comment>1 = first reminder. Default 3: hold the discount back for the last reminder.</comment>
+                    <validate>validate-digits validate-greater-than-zero</validate>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

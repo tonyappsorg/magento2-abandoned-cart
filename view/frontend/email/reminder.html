@@ -1,0 +1,24 @@
+<!--@subject {{trans "You left something in your cart"}} @-->
+<!--@vars {
+"var customerName":"Customer Name",
+"var itemsHtml|raw":"Cart Items",
+"var restoreUrl":"Restore Cart URL",
+"var unsubscribeUrl":"Unsubscribe URL",
+"var couponCode":"Coupon Code"
+} @-->
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Hi %name," name=$customerName}}</p>
+<p>{{trans "Your cart is saved and waiting for you:"}}</p>
+
+<table>{{var itemsHtml|raw}}</table>
+
+{{depend couponCode}}
+<p>{{trans "Use code <strong>%code</strong> at checkout for a little something off." code=$couponCode |raw}}</p>
+{{/depend}}
+
+<p><a href="{{var restoreUrl}}">{{trans "Return to your cart"}}</a></p>
+
+<p><small><a href="{{var unsubscribeUrl}}">{{trans "Stop cart reminders"}}</a></small></p>
+
+{{template config_path="design/email/footer_template"}}

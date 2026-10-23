@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <!-- One row per quote that got at least one reminder. The cart itself stays in core `quote`. -->
+    <table name="tonyapps_abandonedcart_reminder" resource="default" engine="innodb" comment="Abandoned Cart Reminder">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="quote_id" padding="10" unsigned="true" nullable="false" comment="Quote ID"/>
+        <column xsi:type="varchar" name="email" length="255" nullable="false" comment="Recipient Email"/>
+        <column xsi:type="smallint" name="store_id" padding="5" unsigned="true" nullable="false" default="0" comment="Store ID"/>
+        <column xsi:type="smallint" name="sent_count" unsigned="true" nullable="false" default="0" comment="Reminders Sent"/>
+        <column xsi:type="smallint" name="status" unsigned="true" nullable="false" default="0" comment="0 active, 1 recovered, 2 unsubscribed"/>
+        <column xsi:type="varchar" name="token" length="64" nullable="false" comment="Restore/Unsubscribe Token"/>
+        <column xsi:type="varchar" name="coupon_code" length="255" nullable="true" comment="Generated Coupon"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="last_sent_at" on_update="false" nullable="true" comment="Last Sent At"/>
+        <column xsi:type="timestamp" name="recovered_at" on_update="false" nullable="true" comment="Recovered At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="TONYAPPS_ABANDONEDCART_REMINDER_QUOTE_ID_QUOTE_ENTITY_ID"
+                    table="tonyapps_abandonedcart_reminder" column="quote_id"
+                    referenceTable="quote" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="unique" referenceId="TONYAPPS_ABANDONEDCART_REMINDER_QUOTE_ID">
+            <column name="quote_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="TONYAPPS_ABANDONEDCART_REMINDER_TOKEN">
+            <column name="token"/>
+        </constraint>
+        <index referenceId="TONYAPPS_ABANDONEDCART_REMINDER_EMAIL_STATUS" indexType="btree">
+            <column name="email"/>
+            <column name="status"/>
+        </index>
+    </table>
+</schema>

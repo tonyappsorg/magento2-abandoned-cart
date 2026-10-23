@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store/etc/config.xsd">
+    <default>
+        <tonyapps_abandonedcart>
+            <general>
+                <enabled>0</enabled>
+                <delays>1,24,72</delays>
+                <max_age_days>7</max_age_days>
+            </general>
+            <email>
+                <identity>sales</identity>
+                <template>tonyapps_abandonedcart_reminder</template>
+            </email>
+            <coupon>
+                <rule_id>0</rule_id>
+                <step>3</step>
+            </coupon>
+        </tonyapps_abandonedcart>
+    </default>
+</config>
