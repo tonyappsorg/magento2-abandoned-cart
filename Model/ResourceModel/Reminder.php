@@ -21,15 +21,27 @@ class Reminder extends AbstractDb
     }
 
     /**
-     * Active carts with an email, idle at least $minIdleHours, younger than $maxAgeDays,
-     * that still have reminders left and whose email hasn't opted out.
+     * Active carts in $storeIds with an email, younger than $maxAgeDays, whose next reminder is due
+     * and whose email hasn't opted out.
      *
+     * "Due" is decided here, before the LIMIT: filtering only by the first delay let carts waiting for a later
+     * reminder fill every batch, so new carts never got their first one.
+     *
+     * @param float[] $delays hours, ascending
+     * @param int[] $storeIds
      * @return array<int, array<string, mixed>>
      */
-    public function getCandidates(float $minIdleHours, int $maxAgeDays, int $stepCount, int $limit): array
+    public function getCandidates(array $delays, int $maxAgeDays, array $storeIds, int $limit): array
     {
         $connection = $this->getConnection();
         $now = time();
+        $idleSince = static fn (float $hours): string => gmdate(DateTime::DATETIME_PHP_FORMAT, $now - (int) round($hours * 3600));
+
+        $dueBefore = 'CASE COALESCE(r.sent_count, 0)';
+        foreach ($delays as $step => $hours) {
+            $dueBefore .= ' WHEN ' . (int) $step . ' THEN ' . $connection->quote($idleSince($hours));
+        }
+        $dueBefore .= ' END';
 
         $optedOut = $connection->select()
             ->from(['u' => $this->getMainTable()], [new \Zend_Db_Expr('1')])
@@ -46,12 +58,14 @@ class Reminder extends AbstractDb
                 'r.quote_id = q.entity_id',
                 ['reminder_id' => 'entity_id', 'sent_count', 'token', 'coupon_code']
             )
+            ->where('q.store_id IN (?)', $storeIds)
             ->where('q.is_active = 1')
             ->where('q.items_count > 0')
             ->where("q.customer_email IS NOT NULL AND q.customer_email <> ''")
-            ->where('q.updated_at <= ?', gmdate(DateTime::DATETIME_PHP_FORMAT, $now - (int) round($minIdleHours * 3600)))
+            ->where('q.updated_at <= ?', $idleSince($delays[0]))
+            ->where('q.updated_at <= ' . $dueBefore)
             ->where('q.updated_at >= ?', gmdate(DateTime::DATETIME_PHP_FORMAT, $now - $maxAgeDays * 86400))
-            ->where('r.entity_id IS NULL OR (r.status = ? AND r.sent_count < ' . $stepCount . ')', self::STATUS_ACTIVE)
+            ->where('r.entity_id IS NULL OR (r.status = ? AND r.sent_count < ' . count($delays) . ')', self::STATUS_ACTIVE)
             ->where('NOT EXISTS (' . $optedOut . ')')
             ->order('q.updated_at ASC')
             ->limit($limit);
@@ -97,13 +111,16 @@ class Reminder extends AbstractDb
         return $row ?: null;
     }
 
-    /** Opts the address out of reminders for every cart, past and future. */
-    public function unsubscribe(string $email): void
+    /**
+     * Opts the address out of reminders for every cart, past and future. Recovered rows keep their status for the
+     * stats, except the clicked one, so the opt-out is recorded even when every cart was already recovered.
+     */
+    public function unsubscribe(string $email, int $reminderId): void
     {
         $this->getConnection()->update(
             $this->getMainTable(),
             ['status' => self::STATUS_UNSUBSCRIBED],
-            ['email = ?' => $email]
+            ['email = ?' => $email, '(status <> ' . self::STATUS_RECOVERED . ' OR entity_id = ?)' => $reminderId]
         );
     }
 

@@ -45,18 +45,25 @@ class ReminderSender
             return;
         }
 
+        $storeIds = [];
+        foreach ($this->storeManager->getStores() as $store) {
+            if ($this->helper->isEnabled((int) $store->getId())) {
+                $storeIds[] = (int) $store->getId();
+            }
+        }
+        if (!$storeIds) {
+            return;
+        }
+
         $candidates = $this->reminderResource->getCandidates(
-            $delays[0],
+            $delays,
             $this->helper->getMaxAgeDays(),
-            count($delays),
+            $storeIds,
             self::BATCH_SIZE
         );
 
         foreach ($candidates as $row) {
             $storeId = (int) $row['store_id'];
-            if (!$this->helper->isEnabled($storeId)) {
-                continue;
-            }
             $step = $this->schedule->dueStep(
                 $delays,
                 (int) ($row['sent_count'] ?? 0),
@@ -107,6 +114,7 @@ class ReminderSender
         }
 
         $store = $this->storeManager->getStore($storeId);
+        $unsubscribeUrl = $store->getUrl('abandonedcart/cart/unsubscribe', ['token' => $token, '_nosid' => true]);
         $transport = $this->transportBuilder
             ->setTemplateIdentifier($this->helper->getTemplate($storeId))
             ->setTemplateOptions(['area' => Area::AREA_FRONTEND, 'store' => $storeId])
@@ -114,12 +122,16 @@ class ReminderSender
                 'customerName' => (string) $row['customer_firstname'] !== '' ? (string) $row['customer_firstname'] : (string) __('there'),
                 'itemsHtml' => $this->renderItems($quote, $storeId),
                 'restoreUrl' => $store->getUrl('abandonedcart/cart/restore', ['token' => $token, '_nosid' => true]),
-                'unsubscribeUrl' => $store->getUrl('abandonedcart/cart/unsubscribe', ['token' => $token, '_nosid' => true]),
+                'unsubscribeUrl' => $unsubscribeUrl,
                 'couponCode' => $couponCode,
             ])
             ->setFromByScope($this->helper->getIdentity($storeId), $storeId)
             ->addTo($email)
             ->getTransport();
+        // One-click unsubscribe (RFC 8058): mail clients POST to the URL, which Unsubscribe accepts without a form key.
+        $headers = $transport->getMessage()->getSymfonyMessage()->getHeaders();
+        $headers->addTextHeader('List-Unsubscribe', '<' . $unsubscribeUrl . '>');
+        $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
         $transport->sendMessage();
 
         $this->reminderResource->markSent($reminderId, $step + 1);
