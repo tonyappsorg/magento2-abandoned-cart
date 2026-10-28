@@ -1,0 +1,17 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+?>
+<form id="tonyapps-abandonedcart-restore" method="post"
+      action="<?= $escaper->escapeUrl($block->getUrl('abandonedcart/cart/restore')) ?>">
+    <input type="hidden" name="token" value="<?= $escaper->escapeHtmlAttr((string) $block->getRequest()->getParam('token')) ?>"/>
+    <p><?= $escaper->escapeHtml(__('Taking you to your cart...')) ?></p>
+    <button type="submit" class="action primary"><span><?= $escaper->escapeHtml(__('Return to your cart')) ?></span></button>
+</form>
+<?= /* @noEscape */ $secureRenderer->renderTag(
+    'script',
+    [],
+    "document.getElementById('tonyapps-abandonedcart-restore').submit();",
+    false
+) ?>

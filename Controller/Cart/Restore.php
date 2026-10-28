@@ -6,6 +6,9 @@ namespace Tonyapps\AbandonedCart\Controller\Cart;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
@@ -19,8 +22,12 @@ use Tonyapps\AbandonedCart\Model\ResourceModel\Reminder as ReminderResource;
 /**
  * "Return to your cart" link. Guest carts are put back into the session; customer carts never log anyone in
  * from an email link - the shopper signs in and core merges their saved cart as usual.
+ *
+ * GET changes nothing: it renders a page that POSTs straight back (script, plus a button without it). Mail
+ * scanners follow links but don't run scripts, so they can no longer apply the coupon or bump the cart's
+ * updated_at, which restarted the reminder schedule. The token is the credential, so there is no form key.
  */
-class Restore implements HttpGetActionInterface
+class Restore implements HttpGetActionInterface, HttpPostActionInterface, CsrfAwareActionInterface
 {
     public function __construct(
         private readonly RequestInterface $request,
@@ -38,6 +45,9 @@ class Restore implements HttpGetActionInterface
 
     public function execute(): ResultInterface
     {
+        if (!$this->request->isPost()) {
+            return $this->resultFactory->create(ResultFactory::TYPE_PAGE);
+        }
         $redirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
         $reminder = $this->reminderResource->getByToken((string) $this->request->getParam('token', ''));
         if (!$reminder) {
@@ -76,5 +86,15 @@ class Restore implements HttpGetActionInterface
             // Expired or used up; the cart itself is still worth restoring.
             $this->logger->info('Abandoned cart coupon ' . $code . ' not applied: ' . $e->getMessage());
         }
+    }
+
+    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
+    {
+        return null;
+    }
+
+    public function validateForCsrf(RequestInterface $request): ?bool
+    {
+        return true;
     }
 }

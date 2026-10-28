@@ -12,6 +12,7 @@ but it never emails anyone. This module adds the emails and nothing else.
 | Schedule | `Send After (hours)`, e.g. `1,24,72` sends up to three reminders, each counted from the last cart change. If cron was down and several are overdue, only the latest one is sent. |
 | Restore link | `abandonedcart/cart/restore/token/…`. Guest carts go straight back into the session, with the coupon applied. Customer carts ask the shopper to sign in; an email link never logs anyone in. |
 | Coupon | Optional. One code per cart from a cart price rule with *Use Auto Generation* ticked, added to reminder #N (default: the 3rd). |
+| Restore link | `abandonedcart/cart/restore/token/…` changes nothing on GET: the page POSTs itself back straight away (script, with a button fallback), so shoppers land in their cart as before while mail scanners, which don't run scripts, can't apply the coupon or reset the reminder schedule. |
 | Unsubscribe | `abandonedcart/cart/unsubscribe/token/…` shows a confirm button (GET changes nothing, so mail scanners can't opt people out); the POST opts that address out of all future reminders. Emails carry `List-Unsubscribe` + `List-Unsubscribe-Post` for one-click unsubscribe in Gmail/Apple Mail. Recovered rows keep their status. |
 | Recovery | Observer on `sales_model_service_quote_submit_success` marks a reminded cart `recovered`. |
 
