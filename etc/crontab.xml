@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="default">
-        <job name="tonyapps_abandonedcart_reminders" instance="Tonyapps\AbandonedCart\Cron\SendReminders" method="execute">
+        <job name="tonyapps_abandonedcart_reminders" instance="Tonyapps\AbandonedCart\Model\ReminderSender" method="send">
             <schedule>*/15 * * * *</schedule>
         </job>
     </group>
