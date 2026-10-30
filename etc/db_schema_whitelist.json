@@ -1,0 +1,11 @@
+{
+    "tonyapps_abandonedcart_reminder": {
+        "column": {"entity_id": true, "quote_id": true, "email": true, "store_id": true, "sent_count": true, "status": true, "token": true, "coupon_code": true, "created_at": true, "last_sent_at": true, "recovered_at": true},
+        "index": {"TONYAPPS_ABANDONEDCART_REMINDER_EMAIL_STATUS": true},
+        "constraint": {"PRIMARY": true, "TONYAPPS_ABANDONEDCART_REMINDER_QUOTE_ID_QUOTE_ENTITY_ID": true, "TONYAPPS_ABANDONEDCART_REMINDER_QUOTE_ID": true, "TONYAPPS_ABANDONEDCART_REMINDER_TOKEN": true}
+    },
+    "tonyapps_abandonedcart_optout": {
+        "column": {"email": true, "created_at": true},
+        "constraint": {"PRIMARY": true}
+    }
+}

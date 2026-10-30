@@ -30,4 +30,12 @@
             <column name="status"/>
         </index>
     </table>
+    <!-- Opt-outs keyed by email: reminder rows are deleted with their quote, an opt-out must outlive it. -->
+    <table name="tonyapps_abandonedcart_optout" resource="default" engine="innodb" comment="Abandoned Cart Reminder Opt-out">
+        <column xsi:type="varchar" name="email" length="255" nullable="false" comment="Email"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Opted Out At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="email"/>
+        </constraint>
+    </table>
 </schema>

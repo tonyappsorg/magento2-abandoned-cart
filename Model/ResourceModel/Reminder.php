@@ -15,14 +15,17 @@ class Reminder extends AbstractDb
     public const STATUS_RECOVERED = 1;
     public const STATUS_UNSUBSCRIBED = 2;
 
+    /** Email-keyed, so an opt-out survives core's quote cleanup, which cascades to the reminder rows. */
+    public const OPTOUT_TABLE = 'tonyapps_abandonedcart_optout';
+
     protected function _construct()
     {
         $this->_init('tonyapps_abandonedcart_reminder', 'entity_id');
     }
 
     /**
-     * Active carts in $storeIds with an email, younger than $maxAgeDays, whose next reminder is due
-     * and whose email hasn't opted out.
+     * Active carts in $storeIds with an email, younger than $maxAgeDays, whose next reminder is due,
+     * whose email hasn't opted out and hasn't placed an order since the cart last changed (e.g. from another cart).
      *
      * "Due" is decided here, before the LIMIT: filtering only by the first delay let carts waiting for a later
      * reminder fill every batch, so new carts never got their first one.
@@ -44,9 +47,14 @@ class Reminder extends AbstractDb
         $dueBefore .= ' END';
 
         $optedOut = $connection->select()
-            ->from(['u' => $this->getMainTable()], [new \Zend_Db_Expr('1')])
-            ->where('u.email = q.customer_email')
-            ->where('u.status = ?', self::STATUS_UNSUBSCRIBED);
+            ->from(['u' => $this->getTable(self::OPTOUT_TABLE)], [new \Zend_Db_Expr('1')])
+            ->where('u.email = q.customer_email');
+        // ponytail: sales_order has no customer_email index; the created_at index bounds each probe to orders
+        // placed since the cart changed (at most max-age days). Add an email index if order volume makes this slow.
+        $orderedSince = $connection->select()
+            ->from(['o' => $this->getTable('sales_order')], [new \Zend_Db_Expr('1')])
+            ->where('o.created_at >= q.updated_at')
+            ->where('o.customer_email = q.customer_email');
 
         $select = $connection->select()
             ->from(
@@ -67,6 +75,7 @@ class Reminder extends AbstractDb
             ->where('q.updated_at >= ?', gmdate(DateTime::DATETIME_PHP_FORMAT, $now - $maxAgeDays * 86400))
             ->where('r.entity_id IS NULL OR (r.status = ? AND r.sent_count < ' . count($delays) . ')', self::STATUS_ACTIVE)
             ->where('NOT EXISTS (' . $optedOut . ')')
+            ->where('NOT EXISTS (' . $orderedSince . ')')
             ->order('q.updated_at ASC')
             ->limit($limit);
 
@@ -82,6 +91,20 @@ class Reminder extends AbstractDb
             'token' => $token,
         ]);
         return (int) $this->getConnection()->lastInsertId($this->getMainTable());
+    }
+
+    /** A coupon already minted for this email by another cart's reminder, so extra carts don't mint extra coupons. */
+    public function getEmailCoupon(string $email): string
+    {
+        $connection = $this->getConnection();
+        return (string) $connection->fetchOne(
+            $connection->select()
+                ->from($this->getMainTable(), ['coupon_code'])
+                ->where('email = ?', $email)
+                ->where('coupon_code IS NOT NULL')
+                ->order('entity_id DESC')
+                ->limit(1)
+        );
     }
 
     public function setCoupon(int $reminderId, string $code): void
@@ -112,11 +135,13 @@ class Reminder extends AbstractDb
     }
 
     /**
-     * Opts the address out of reminders for every cart, past and future. Recovered rows keep their status for the
-     * stats, except the clicked one, so the opt-out is recorded even when every cart was already recovered.
+     * Opts the address out of reminders for every cart, past and future: the opt-out table is what candidate
+     * selection checks. Reminder rows are flagged too, for the stats; recovered rows keep their status, except the
+     * clicked one.
      */
     public function unsubscribe(string $email, int $reminderId): void
     {
+        $this->getConnection()->insertOnDuplicate($this->getTable(self::OPTOUT_TABLE), ['email' => $email], ['email']);
         $this->getConnection()->update(
             $this->getMainTable(),
             ['status' => self::STATUS_UNSUBSCRIBED],

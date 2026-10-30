@@ -38,6 +38,14 @@ There's no admin screen yet. Use SQL:
 SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 ```
 
+## 2026-10-30 review fixes
+
+- Opt-outs are stored by email in `tonyapps_abandonedcart_optout`, which candidate selection checks. Reminder rows are deleted with their quote by core's quote cleanup, so a status-2 row alone was forgotten after about 30 days. A data patch copies the existing status-2 emails.
+- The Restore page's POST carries a form key and goes through core's CSRF check. Only Unsubscribe still accepts a POST without a form key, for RFC 8058 one-click.
+- The coupon is added to the coupon reminder or any later one (`>=`), so a cron outage no longer skips it. An email gets one coupon: other carts with the same email reuse that code instead of generating another.
+- Carts whose email placed an order after the cart last changed (from another cart, for example) are no longer reminded.
+- A signed-in shopper who opens a guest cart's link sees a notice instead of being sent to their own cart without one.
+
 ## Install
 
 ```

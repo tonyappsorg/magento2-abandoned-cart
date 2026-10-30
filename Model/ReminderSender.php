@@ -105,8 +105,10 @@ class ReminderSender
         }
 
         $couponCode = (string) $row['coupon_code'];
-        if ($couponCode === '' && $step + 1 === $this->helper->getCouponStep($storeId)) {
-            $couponCode = $this->generateCoupon($storeId);
+        $couponStep = $this->helper->getCouponStep($storeId);
+        // ">=": after a cron outage dueStep() skips straight to the latest reminder, past the coupon step.
+        if ($couponCode === '' && $couponStep > 0 && $step + 1 >= $couponStep) {
+            $couponCode = $this->reminderResource->getEmailCoupon($email) ?: $this->generateCoupon($storeId);
             if ($couponCode !== '') {
                 // Saved before sending so a failed send retries with the same code instead of minting another.
                 $this->reminderResource->setCoupon($reminderId, $couponCode);
