@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Tonyapps\AbandonedCart\Model;
 
+use Magento\Catalog\Helper\Image;
 use Magento\Framework\App\Area;
 use Magento\Framework\Escaper;
 use Magento\Framework\Mail\Template\TransportBuilder;
@@ -22,6 +23,9 @@ class ReminderSender
     // ponytail: fixed batch per cron run. 500 every 15 min is 48k/day; raise it or page if a store outgrows that.
     private const BATCH_SIZE = 500;
 
+    /** Cart item option Tonyapps_FreeGift puts on gift lines. */
+    private const FREE_GIFT_OPTION = 'tonyapps_free_gift';
+
     public function __construct(
         private readonly ReminderResource $reminderResource,
         private readonly ReminderSchedule $schedule,
@@ -34,7 +38,8 @@ class ReminderSender
         private readonly TransportBuilder $transportBuilder,
         private readonly PriceCurrencyInterface $priceCurrency,
         private readonly Escaper $escaper,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly Image $imageHelper
     ) {
     }
 
@@ -122,7 +127,12 @@ class ReminderSender
             ->setTemplateOptions(['area' => Area::AREA_FRONTEND, 'store' => $storeId])
             ->setTemplateVars([
                 'customerName' => (string) $row['customer_firstname'] !== '' ? (string) $row['customer_firstname'] : (string) __('there'),
+                // Kept for templates customised before the item cards existed.
                 'itemsHtml' => $this->renderItems($quote, $storeId),
+                'items' => $this->items($quote, $storeId),
+                'subtotal' => $this->formatPrice((float) $quote->getSubtotal(), $quote, $storeId),
+                'storeName' => (string) $store->getFrontendName(),
+                'promoBlockId' => $this->helper->getPromoBlock($storeId),
                 'restoreUrl' => $store->getUrl('abandonedcart/cart/restore', ['token' => $token, '_nosid' => true]),
                 'unsubscribeUrl' => $unsubscribeUrl,
                 'couponCode' => $couponCode,
@@ -153,6 +163,36 @@ class ReminderSender
             return '';
         }
         return (string) ($codes[0] ?? '');
+    }
+
+    /**
+     * One card per cart line for the email's {{for}} loop. Free gifts (Tonyapps_FreeGift lines) say so
+     * instead of showing $0.00.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function items(Quote $quote, int $storeId): array
+    {
+        $items = [];
+        foreach ($quote->getAllVisibleItems() as $item) {
+            $product = $item->getProduct();
+            $isGift = (bool) $item->getOptionByCode(self::FREE_GIFT_OPTION);
+            $items[] = [
+                'name' => (string) $item->getName(),
+                'url' => $product ? (string) $product->getProductUrl() : '',
+                'image' => $product ? (string) $this->imageHelper->init($product, 'category_page_grid')->getUrl() : '',
+                'qty' => (string) __('Qty: %1', (float) $item->getQty()),
+                'price' => $isGift
+                    ? (string) __('Free gift')
+                    : $this->formatPrice((float) $item->getRowTotalInclTax(), $quote, $storeId),
+            ];
+        }
+        return $items;
+    }
+
+    private function formatPrice(float $amount, Quote $quote, int $storeId): string
+    {
+        return (string) $this->priceCurrency->format($amount, false, 2, $storeId, $quote->getQuoteCurrencyCode());
     }
 
     private function renderItems(Quote $quote, int $storeId): string

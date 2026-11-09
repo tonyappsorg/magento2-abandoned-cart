@@ -1,24 +1,86 @@
 <!--@subject {{trans "You left something in your cart"}} @-->
 <!--@vars {
 "var customerName":"Customer Name",
-"var itemsHtml|raw":"Cart Items",
+"var items":"Cart Items",
+"var subtotal":"Cart Subtotal",
+"var storeName":"Store Name",
+"var promoBlockId":"Promotion CMS Block",
+"var itemsHtml|raw":"Cart Items (HTML, for older templates)",
 "var restoreUrl":"Restore Cart URL",
 "var unsubscribeUrl":"Unsubscribe URL",
 "var couponCode":"Coupon Code"
 } @-->
 {{template config_path="design/email/header_template"}}
-
-<p>{{trans "Hi %name," name=$customerName}}</p>
-<p>{{trans "Your cart is saved and waiting for you:"}}</p>
-
-<table>{{var itemsHtml|raw}}</table>
-
-{{depend couponCode}}
-<p>{{trans "Use code <strong>%code</strong> at checkout for a little something off." code=$couponCode |raw}}</p>
-{{/depend}}
-
-<p><a href="{{var restoreUrl}}">{{trans "Return to your cart"}}</a></p>
-
-<p><small><a href="{{var unsubscribeUrl}}">{{trans "Stop cart reminders"}}</a></small></p>
-
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+        <td style="padding-bottom:20px;">
+            <h1 style="margin:0 0 12px;font-size:24px;font-weight:600;">{{trans "Hi %name, you left something behind" name=$customerName}}</h1>
+            <p style="margin:0;">{{trans "Your cart at %store is saved and waiting for you. Pick up right where you left off." store=$storeName}}</p>
+        </td>
+    </tr>
+    {{for item in items}}
+    <tr>
+        <td style="padding:16px 0;border-top:1px solid #e5e5e5;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td width="100" valign="top" style="padding-right:20px;">
+                        <a href="{{var item.url}}"><img src="{{var item.image}}" alt="{{var item.name}}" width="100" style="display:block;width:100px;height:auto;border:0;"/></a>
+                    </td>
+                    <td valign="middle">
+                        <p style="margin:0 0 6px;font-size:16px;font-weight:600;"><a href="{{var item.url}}" style="color:#333333;text-decoration:none;">{{var item.name}}</a></p>
+                        <p style="margin:0;color:#666666;">{{var item.qty}}</p>
+                    </td>
+                    <td valign="middle" align="right" style="padding-left:16px;font-size:16px;font-weight:600;white-space:nowrap;">{{var item.price}}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    {{/for}}
+    <tr>
+        <td style="padding:16px 0;border-top:1px solid #e5e5e5;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td style="font-size:16px;">{{trans "Subtotal"}}</td>
+                    <td align="right" style="font-size:16px;font-weight:600;">{{var subtotal}}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    {{depend promoBlockId}}
+    <tr>
+        <td style="padding:8px 0 16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td style="padding:20px;background:#f2f7fb;border-radius:4px;">{{block id=$promoBlockId}}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    {{/depend}}
+    {{depend couponCode}}
+    <tr>
+        <td style="padding:8px 0 16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td align="center" style="padding:20px;background:#fff8e6;border:2px dashed #f5a623;border-radius:4px;">
+                        <p style="margin:0 0 8px;font-size:16px;">{{trans "A little something to help you decide:"}}</p>
+                        <p style="margin:0 0 8px;font-size:26px;font-weight:700;letter-spacing:3px;">{{var couponCode}}</p>
+                        <p style="margin:0;color:#666666;">{{trans "Enter this code at checkout. It can be used once."}}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    {{/depend}}
+    <tr>
+        <td align="center" style="padding:16px 0 24px;">
+            <a href="{{var restoreUrl}}" style="display:inline-block;padding:14px 32px;background:#1979c3;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;border-radius:3px;">{{trans "Return to your cart"}}</a>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding-top:16px;border-top:1px solid #e5e5e5;">
+            <p style="margin:0;font-size:12px;color:#999999;">{{trans "You are receiving this because you left items in your cart at %store." store=$storeName}} <a href="{{var unsubscribeUrl}}" style="color:#999999;">{{trans "Stop cart reminders"}}</a></p>
+        </td>
+    </tr>
+</table>
 {{template config_path="design/email/footer_template"}}
