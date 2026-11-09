@@ -46,6 +46,17 @@ SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 - Carts whose email placed an order after the cart last changed (from another cart, for example) are no longer reminded.
 - A signed-in shopper who opens a guest cart's link sees a notice instead of being sent to their own cart without one.
 
+## 2026-11-09 email redesign
+
+The reminder email shows a card per cart line (product image, name linking to the product, qty, row total;
+Tonyapps_FreeGift lines say *Free gift* instead of $0.00), the cart subtotal, the coupon in a highlighted box
+and a **Return to your cart** button. New template variables: `items`, `subtotal`, `storeName`. `itemsHtml` is
+still passed for templates customised in the admin before this change.
+
+**Promotion Block** (Email group, per store view): a CMS block from **Content > Blocks**, shown in a box between
+the cart and the coupon, e.g. a current promotion with a banner and a link. It is edited with the WYSIWYG editor
+and rendered with `{{block id=$promoBlockId}}`; empty means no box.
+
 ## Install
 
 ```

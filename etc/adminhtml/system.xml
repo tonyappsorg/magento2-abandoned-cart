@@ -33,6 +33,11 @@
                     <label>Template</label>
                     <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
                 </field>
+                <field id="promo_block" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Promotion Block</label>
+                    <source_model>Tonyapps\AbandonedCart\Model\Config\Source\PromoBlock</source_model>
+                    <comment>A CMS block (Content > Blocks) shown in the reminder email between the cart and the button, e.g. a current promotion. Leave empty for none.</comment>
+                </field>
             </group>
             <group id="coupon" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Coupon</label>

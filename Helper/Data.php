@@ -15,6 +15,7 @@ class Data extends AbstractHelper
     private const XML_PATH_MAX_AGE = 'tonyapps_abandonedcart/general/max_age_days';
     private const XML_PATH_IDENTITY = 'tonyapps_abandonedcart/email/identity';
     private const XML_PATH_TEMPLATE = 'tonyapps_abandonedcart/email/template';
+    private const XML_PATH_PROMO_BLOCK = 'tonyapps_abandonedcart/email/promo_block';
     private const XML_PATH_COUPON_RULE = 'tonyapps_abandonedcart/coupon/rule_id';
     private const XML_PATH_COUPON_STEP = 'tonyapps_abandonedcart/coupon/step';
 
@@ -62,5 +63,11 @@ class Data extends AbstractHelper
     public function getCouponStep(int $storeId): int
     {
         return (int) $this->scopeConfig->getValue(self::XML_PATH_COUPON_STEP, ScopeInterface::SCOPE_STORE, $storeId);
+    }
+
+    /** Identifier of the CMS block shown in the reminder email, '' for none. */
+    public function getPromoBlock(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(self::XML_PATH_PROMO_BLOCK, ScopeInterface::SCOPE_STORE, $storeId);
     }
 }
