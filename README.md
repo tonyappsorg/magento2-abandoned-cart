@@ -8,7 +8,7 @@ but it never emails anyone. This module adds the emails and nothing else.
 
 | Feature | How |
 |---|---|
-| Who qualifies | Active quote with items and an email. Guests get an email on the quote once they type it at checkout (OneStepCheckout saves it at the shipping step). |
+| Who qualifies | Active quote with items and an email. Guests get an email on the quote once they type it at checkout (see *Guest email* below). |
 | Schedule | `Send After (hours)`, e.g. `1,24,72` sends up to three reminders, each counted from the last cart change. If cron was down and several are overdue, only the latest one is sent. |
 | Restore link | `abandonedcart/cart/restore/token/…`. Guest carts go straight back into the session, with the coupon applied. Customer carts ask the shopper to sign in; an email link never logs anyone in. |
 | Coupon | Optional. One code per cart from a cart price rule with *Use Auto Generation* ticked, added to reminder #N (default: the 3rd). |
@@ -56,6 +56,16 @@ still passed for templates customised in the admin before this change.
 **Promotion Block** (Email group, per store view): a CMS block from **Content > Blocks**, shown in a box between
 the cart and the coupon, e.g. a current promotion with a banner and a link. It is edited with the WYSIWYG editor
 and rendered with `{{block id=$promoBlockId}}`; empty means no box.
+
+## Guest email (2026-11-09)
+
+Luma's checkout keeps the guest's email in the browser until the order is placed, so a guest cart had no email and
+was never reminded. `Plugin\SaveGuestEmailOnCart` (an after-plugin on `AccountManagementInterface::isEmailAvailable`,
+`etc/webapi_rest/di.xml` only) saves it: checkout always calls `POST /V1/customers/isEmailAvailable` once the address
+is valid, even with *Enable Guest Checkout Login* off, and that request carries the shopper's session. Only the
+session's own active guest cart with items is updated, only where reminders are enabled, and the answer of the
+email check is never changed. No extra JavaScript or request. Privacy: the email is stored before the order, which
+the store's privacy notice should mention.
 
 ## Install
 
