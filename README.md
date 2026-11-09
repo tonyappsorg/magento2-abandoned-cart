@@ -67,6 +67,14 @@ session's own active guest cart with items is updated, only where reminders are 
 email check is never changed. No extra JavaScript or request. Privacy: the email is stored before the order, which
 the store's privacy notice should mention.
 
+## Emails
+
+Screenshots of the emails as sent (Luma theme, 2026-11-09). Source images are in `docs/emails/`.
+
+**Cart reminder with a coupon and the Promotion Block**
+
+![Cart reminder with a coupon and the Promotion Block](docs/emails/reminder-with-coupon.png)
+
 ## Install
 
 ```
