@@ -9,7 +9,7 @@
             </general>
             <email>
                 <identity>sales</identity>
-                <template>tonyapps_abandonedcart_reminder</template>
+                <template>tonyapps_abandonedcart_email_template</template>
             </email>
             <coupon>
                 <rule_id>0</rule_id>
