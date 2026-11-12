@@ -1,99 +1,72 @@
-# Tonyapps_AbandonedCart
+# Abandoned Cart Reminders for Magento 2
 
-Reminder emails for carts left behind, with a one-click "return to your cart" link, an optional
-single-use coupon, and recovery tracking.
+Win back shoppers who left items in their cart, with timed reminder emails, a one-click way back to the cart and an optional coupon.
 
-Core already keeps the cart (`quote`) and lists abandoned carts under **Reports > Marketing > Abandoned Carts**,
-but it never emails anyone. This module adds the emails and nothing else.
+Magento Open Source keeps abandoned carts and lists them under **Reports › Marketing › Abandoned Carts**, but it never emails anyone about them. This module adds the reminder emails, the "return to your cart" link, an optional single-use coupon and recovery tracking, and builds on core's carts and cart price rules.
 
-| Feature | How |
-|---|---|
-| Who qualifies | Active quote with items and an email. Guests get an email on the quote once they type it at checkout (see *Guest email* below). |
-| Schedule | `Send After (hours)`, e.g. `1,24,72` sends up to three reminders, each counted from the last cart change. If cron was down and several are overdue, only the latest one is sent. |
-| Restore link | `abandonedcart/cart/restore/token/…`. Guest carts go straight back into the session, with the coupon applied. Customer carts ask the shopper to sign in; an email link never logs anyone in. |
-| Coupon | Optional. One code per cart from a cart price rule with *Use Auto Generation* ticked, added to reminder #N (default: the 3rd). |
-| Restore link | `abandonedcart/cart/restore/token/…` changes nothing on GET: the page POSTs itself back straight away (script, with a button fallback), so shoppers land in their cart as before while mail scanners, which don't run scripts, can't apply the coupon or reset the reminder schedule. |
-| Unsubscribe | `abandonedcart/cart/unsubscribe/token/…` shows a confirm button (GET changes nothing, so mail scanners can't opt people out); the POST opts that address out of all future reminders. Emails carry `List-Unsubscribe` + `List-Unsubscribe-Post` for one-click unsubscribe in Gmail/Apple Mail. Recovered rows keep their status. |
-| Recovery | Observer on `sales_model_service_quote_submit_success` marks a reminded cart `recovered`. |
+## Features
 
-State lives in `tonyapps_abandonedcart_reminder`, one row per reminded quote (status 0 active, 1 recovered, 2 unsubscribed).
+- **Reminders on your schedule**: send up to as many reminders as you like, e.g. 1, 24 and 72 hours after the shopper last changed the cart. If cron was down and several reminders are overdue, the shopper gets one email, not a burst.
+- **Guests and customers**: signed-in customers' carts qualify, and so do guest carts once the shopper has typed an email at checkout. No extra JavaScript is added.
+- **One click back to the cart**: guests land in their restored cart with the coupon already applied. Customers are asked to sign in first, because an email link never logs anyone in.
+- **Coupon for the hesitant**: add a single-use code, generated from a cart price rule you choose, to a chosen reminder (by default the third). One coupon per email address, not one per cart.
+- **Rich email**: product cards with image, name, quantity and row total, the cart subtotal, a highlighted coupon box and a **Return to your cart** button. Gifts from Tonyapps Free Gift show as *Free gift* instead of $0.00.
+- **Promotion Block**: show a CMS block of your choice in the email (a banner, a current offer), edited with the normal WYSIWYG editor, per store view.
+- **Respectful unsubscribe**: a "Stop cart reminders" link, plus one-click unsubscribe in Gmail and Apple Mail. An opt-out is remembered for that email address for good.
+- **Safe from mail scanners**: link-checking robots that open every link can't apply the coupon, reset the schedule or unsubscribe anyone.
+- **Recovery tracking**: a reminded cart that is later ordered is marked recovered. Carts whose email has already ordered since the cart last changed are not reminded.
+- **Safe to switch on**: carts older than a set number of days (default 7) are ignored, so the first run doesn't email every old cart in the database.
 
-## Cron
+## How it works
 
-* `tonyapps_abandonedcart_reminders`: every 15 min, up to 500 carts per run.
+1. A shopper adds items and leaves. The cart stays in Magento as usual.
+2. Every 15 minutes, cron checks for carts whose next reminder is due and emails them.
+3. The shopper clicks **Return to your cart** and lands in the cart (guests) or on the sign-in page (customers), then checks out.
+4. Placing the order marks the cart as recovered and stops further reminders.
 
-## Configuration
+## Screenshots
 
-**Stores > Configuration > Sales > Abandoned Cart Reminders**. **Off by default.** Enable, sender,
-template and coupon can be set per store. The delays and max cart age are global.
-
-`Ignore Carts Older Than` (default 7 days) keeps the first run after you switch the module on from
-emailing every old cart in the database.
-
-## Recovery numbers
-
-There's no admin screen yet. Use SQL:
-
-```sql
-SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
-```
-
-## 2026-10-30 review fixes
-
-- Opt-outs are stored by email in `tonyapps_abandonedcart_optout`, which candidate selection checks. Reminder rows are deleted with their quote by core's quote cleanup, so a status-2 row alone was forgotten after about 30 days. A data patch copies the existing status-2 emails.
-- The Restore page's POST carries a form key and goes through core's CSRF check. Only Unsubscribe still accepts a POST without a form key, for RFC 8058 one-click.
-- The coupon is added to the coupon reminder or any later one (`>=`), so a cron outage no longer skips it. An email gets one coupon: other carts with the same email reuse that code instead of generating another.
-- Carts whose email placed an order after the cart last changed (from another cart, for example) are no longer reminded.
-- A signed-in shopper who opens a guest cart's link sees a notice instead of being sent to their own cart without one.
-
-## 2026-11-09 email redesign
-
-The reminder email shows a card per cart line (product image, name linking to the product, qty, row total;
-Tonyapps_FreeGift lines say *Free gift* instead of $0.00), the cart subtotal, the coupon in a highlighted box
-and a **Return to your cart** button. New template variables: `items`, `subtotal`, `storeName`. `itemsHtml` is
-still passed for templates customised in the admin before this change.
-
-**Promotion Block** (Email group, per store view): a CMS block from **Content > Blocks**, shown in a box between
-the cart and the coupon, e.g. a current promotion with a banner and a link. It is edited with the WYSIWYG editor
-and rendered with `{{block id=$promoBlockId}}`; empty means no box.
-
-## Guest email (2026-11-09)
-
-Luma's checkout keeps the guest's email in the browser until the order is placed, so a guest cart had no email and
-was never reminded. `Plugin\SaveGuestEmailOnCart` (an after-plugin on `AccountManagementInterface::isEmailAvailable`,
-`etc/webapi_rest/di.xml` only) saves it: checkout always calls `POST /V1/customers/isEmailAvailable` once the address
-is valid, even with *Enable Guest Checkout Login* off, and that request carries the shopper's session. Only the
-session's own active guest cart with items is updated, only where reminders are enabled, and the answer of the
-email check is never changed. No extra JavaScript or request. Privacy: the email is stored before the order, which
-the store's privacy notice should mention.
-
-## Emails
-
-Screenshots of the emails as sent (Luma theme, 2026-11-09). Source images are in `docs/emails/`.
+Emails as sent (Luma theme, 2026-11-09).
 
 **Cart reminder with a coupon and the Promotion Block**
 
 ![Cart reminder with a coupon and the Promotion Block](docs/emails/reminder-with-coupon.png)
 
-## Install
+## Good to know
 
-```
+- Off by default. The reminder delays and maximum cart age are global settings; enable, sender, template, Promotion Block and coupon can be set per store.
+- No admin report for recovered carts yet; recovery numbers are read from the database.
+- Customer carts don't get the coupon applied automatically after sign-in; the code is in the email.
+- Guest emails are captured on the standard Luma checkout. The guest's email is saved before the order is placed, which your privacy notice should mention.
+- Requires Magento cron to be running.
+- Built and tested on the Luma theme; Hyvä has not been checked.
+
+## Requirements
+
+- Magento Open Source 2.4.8
+- PHP 8.3 or 8.4
+- Magento modules: Quote, Checkout, SalesRule
+
+## Installation
+
+```sh
+composer require tonyapps/module-abandoned-cart
 bin/magento module:enable Tonyapps_AbandonedCart
 bin/magento setup:upgrade
 ```
 
-## Tests
+Make sure Magento cron is running.
 
-```
-vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist app/code/Tonyapps/AbandonedCart/Test/Unit
-```
+## Configuration
 
-## Redesigning the emails
+- **Stores › Configuration › Sales › Abandoned Cart Reminders**: enable, delays (hours), cart age limit, sender, template, Promotion Block, coupon rule and which reminder carries the coupon.
+- **Marketing › Cart Price Rules**: create the coupon rule with *Use Auto Generation* ticked and *Uses per Coupon* set to 1.
+- **Content › Blocks**: create the block used as the Promotion Block.
 
-This module's emails can be redesigned visually with the [Email Designer](https://github.com/tonyappsorg/magento2-email-designer) (`Tonyapps_EmailDesigner`): open **Marketing › Communications ›
-Email Designer**, start a design for the email and save it. Then pick the saved design in this module's email
-template setting under **Stores › Configuration**. The default template is used until a design is picked.
+### Redesigning the email
 
-The default template's ID is `tonyapps_abandonedcart_email_template` (was `tonyapps_abandonedcart_reminder`). The template setting
-lists the default under an ID made from its config path, so the old ID made the setting fail with "Email template
-is not defined" and no other template could be picked. Theme overrides keep working (they go by file name).
+The email can be redesigned visually with the [Email Designer](https://github.com/tonyappsorg/magento2-email-designer) (`Tonyapps_EmailDesigner`): open **Marketing › Communications › Email Designer**, start a design for the email and save it, then pick the saved design in the **Template** setting under **Stores › Configuration**. The default template is used until a design is picked.
+
+## For developers
+
+Architecture, decisions, data model and tests are in [AGENTS.md](AGENTS.md).
