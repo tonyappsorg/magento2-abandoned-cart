@@ -1,0 +1,9 @@
+        <mj-text font-size="24px" font-weight="600">{{trans "Hi %name, you left something behind" name=$customerName}}</mj-text>
+        <mj-text>{{trans "Your cart at %store is saved and waiting for you. Pick up right where you left off." store=$storeName}}</mj-text>
+        <mj-raw ta-block="abandonedcart_items"></mj-raw>
+        <mj-raw ta-block="abandonedcart_subtotal"></mj-raw>
+        <mj-raw ta-block="abandonedcart_promo"></mj-raw>
+        <mj-raw ta-block="abandonedcart_coupon"></mj-raw>
+        <mj-button background-color="#1979c3" border-radius="3px" font-size="16px" font-weight="600" inner-padding="14px 32px" href="{{var restoreUrl}}">{{trans "Return to your cart"}}</mj-button>
+        <mj-divider border-width="1px" border-color="#e5e5e5"></mj-divider>
+        <mj-text font-size="12px" color="#999999">{{trans "You are receiving this because you left items in your cart at %store." store=$storeName}} <a href="{{var unsubscribeUrl}}" style="color:#999999;">{{trans "Stop cart reminders"}}</a></mj-text>

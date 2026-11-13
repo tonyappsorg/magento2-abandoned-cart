@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Tonyapps_EmailDesigner: blocks and a starter design for the reminder. Ignored without that module. -->
+    <type name="Tonyapps\EmailDesigner\Model\BlockPool">
+        <arguments>
+            <argument name="blocks" xsi:type="array">
+                <item name="abandonedcart_items" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">Cart items</item>
+                    <item name="templates" xsi:type="array">
+                        <item name="0" xsi:type="string">tonyapps_abandonedcart_email_template</item>
+                    </item>
+                    <item name="directive" xsi:type="string"><![CDATA[<table width="100%" cellpadding="0" cellspacing="0" role="presentation">{{for item in items}}<tr><td style="padding:16px 0;border-top:1px solid #e5e5e5;"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td width="100" valign="top" style="padding-right:20px;"><a href="{{var item.url}}"><img src="{{var item.image}}" alt="{{var item.name}}" width="100" style="display:block;width:100px;height:auto;border:0;"/></a></td><td valign="middle"><p style="margin:0 0 6px;font-size:16px;font-weight:600;"><a href="{{var item.url}}" style="color:#333333;text-decoration:none;">{{var item.name}}</a></p><p style="margin:0;color:#666666;">{{var item.qty}}</p></td><td valign="middle" align="right" style="padding-left:16px;font-size:16px;font-weight:600;white-space:nowrap;">{{var item.price}}</td></tr></table></td></tr>{{/for}}</table>]]></item>
+                </item>
+                <item name="abandonedcart_subtotal" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">Cart subtotal</item>
+                    <item name="templates" xsi:type="array">
+                        <item name="0" xsi:type="string">tonyapps_abandonedcart_email_template</item>
+                    </item>
+                    <item name="directive" xsi:type="string"><![CDATA[<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-top:1px solid #e5e5e5;"><tr><td style="padding-top:16px;font-size:16px;">{{trans "Subtotal"}}</td><td align="right" style="padding-top:16px;font-size:16px;font-weight:600;">{{var subtotal}}</td></tr></table>]]></item>
+                </item>
+                <item name="abandonedcart_promo" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">Promotion block</item>
+                    <item name="templates" xsi:type="array">
+                        <item name="0" xsi:type="string">tonyapps_abandonedcart_email_template</item>
+                    </item>
+                    <item name="directive" xsi:type="string"><![CDATA[{{depend promoBlockId}}<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="padding:20px;background:#f2f7fb;border-radius:4px;">{{block id=$promoBlockId}}</td></tr></table>{{/depend}}]]></item>
+                </item>
+                <item name="abandonedcart_coupon" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">Coupon</item>
+                    <item name="templates" xsi:type="array">
+                        <item name="0" xsi:type="string">tonyapps_abandonedcart_email_template</item>
+                    </item>
+                    <item name="directive" xsi:type="string"><![CDATA[{{depend couponCode}}<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:20px;background:#fff8e6;border:2px dashed #f5a623;border-radius:4px;"><p style="margin:0 0 8px;font-size:16px;">{{trans "A little something to help you decide:"}}</p><p style="margin:0 0 8px;font-size:26px;font-weight:700;letter-spacing:3px;">{{var couponCode}}</p><p style="margin:0;color:#666666;">{{trans "Enter this code at checkout. It can be used once."}}</p></td></tr></table>{{/depend}}]]></item>
+                </item>
+            </argument>
+            <argument name="starters" xsi:type="array">
+                <item name="tonyapps_abandonedcart_email_template" xsi:type="string">Tonyapps_AbandonedCart::view/adminhtml/email_designer/reminder.mjml</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

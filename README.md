@@ -64,7 +64,7 @@ Make sure Magento cron is running.
 
 ### Redesigning the email
 
-The email can be redesigned visually with the [Email Designer](https://github.com/tonyappsorg/magento2-email-designer) (`Tonyapps_EmailDesigner`): open **Marketing › Communications › Email Designer**, start a design for the email and save it, then pick the saved design in the **Template** setting under **Stores › Configuration**. The default template is used until a design is picked.
+The email can be redesigned visually with the [Email Designer](https://github.com/tonyappsorg/magento2-email-designer) (`Tonyapps_EmailDesigner`): open **Marketing › Communications › Email Designer**, start a design for the email and save it, then pick the saved design in the **Template** setting under **Stores › Configuration**. The default template is used until a design is picked. A new design starts as a ready-made copy of the reminder, with the cart items, subtotal, promotion and coupon as drag-and-drop blocks.
 
 ## For developers
 
