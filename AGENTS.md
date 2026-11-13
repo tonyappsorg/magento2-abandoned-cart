@@ -14,7 +14,7 @@ Read this before changing the module. Workspace-wide rules are in ../AGENTS.md.
 |---|---|
 | Who qualifies | Active quote with items and an email. Guests get an email on the quote once they type it at checkout (see Guest email below). |
 | Schedule | `Send After (hours)`, e.g. `1,24,72` sends up to three reminders, each counted from the last cart change (`quote.updated_at`). If cron was down and several are overdue, only the latest one is sent (`Model\ReminderSchedule::dueStep()`; `parseDelays()` drops junk/duplicates/non-positive values and sorts). |
-| Restore link | `abandonedcart/cart/restore/token/…` (`Controller\Cart\Restore`). GET changes nothing: the page (`restore.phtml`) POSTs itself back straight away (script, with a button fallback), so shoppers land in their cart while mail scanners, which don't run scripts, can't apply the coupon or reset the reminder schedule. The POST carries a form key and goes through core's CSRF check. Guest carts go straight back into the session (`replaceQuote`) with the coupon applied. Customer carts ask the shopper to sign in (before-auth URL = cart); an email link never logs anyone in. A signed-in shopper who opens a guest cart's link gets a notice instead of a cart swap. |
+| Restore link | `abandonedcart/cart/restore/token/…` (`Controller\Cart\Restore`). GET changes nothing: the page (`restore.phtml`) POSTs itself back straight away (script, with a button fallback), so shoppers land in their cart while mail scanners, which don't run scripts, can't apply the coupon or reset the reminder schedule. The POST carries a form key and goes through core's CSRF check. Guest carts go straight back into the session (`replaceQuote`) with the coupon applied. Customer carts ask the shopper to sign in (before-auth URL = the restore link, so they come back to it); an email link never logs anyone in. Once the cart's owner is signed in, the coupon is applied to their cart. A signed-in shopper who opens a guest cart's link gets a notice instead of a cart swap. |
 | Coupon | Optional. One code per cart from a cart price rule with *Use Auto Generation* ticked (`Model\Config\Source\CouponRule` lists only those), added to reminder #N (default 3) or any later one (`>=`). One coupon per email: other carts with the same email reuse that code. Expired/used-up codes are logged at info on restore; the cart is still restored. |
 | Unsubscribe | `abandonedcart/cart/unsubscribe/token/…` (`Controller\Cart\Unsubscribe`, `CsrfAwareActionInterface`) shows a confirm button (GET changes nothing); the POST opts that address out of all future reminders. Only this POST accepts no form key, for RFC 8058 one-click. Emails carry `List-Unsubscribe` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Recovered rows keep their status. |
 | Recovery | `Observer\MarkRecovered` on `sales_model_service_quote_submit_success` marks a reminded cart `recovered`. |
@@ -74,7 +74,6 @@ Email template ID: `tonyapps_abandonedcart_email_template` (file `reminder.html`
 ## Known limitations and open points
 
 - No admin screen for recovery numbers; use SQL (Operations).
-- Customer carts: the coupon is not applied on restore (only guest carts get it applied); the code is in the email.
 - Guest email capture depends on checkout calling `isEmailAvailable` over REST (Luma does).
 - Hyvä not checked.
 
@@ -101,6 +100,7 @@ SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 
 ## Change history
 
+- **2026-11-13 coupon for customer carts**: the coupon was applied only to guest carts. The cart's owner now gets it too: signed in already, it is applied at once; signed out, the sign-in page sends them back to the restore link (before-auth URL), which applies it. Tests in `RestoreTest`.
 - **2026-11-11 template ID rename**: the default template ID is `tonyapps_abandonedcart_email_template` (was `tonyapps_abandonedcart_reminder`). The template setting lists the default under an ID made from its config path, so the old ID made the setting fail with "Email template is not defined" and no other template could be picked (blocking Email Designer designs). Theme overrides keep working (they go by file name).
 - **2026-11-09 guest email**: `Plugin\SaveGuestEmailOnCart` (see Architecture).
 - **2026-11-09 email redesign**: product cards, subtotal, highlighted coupon, button; new variables `items`, `subtotal`, `storeName`; `itemsHtml` kept; Promotion Block setting. Screenshot in `docs/emails/reminder-with-coupon.png` (Luma, 2026-11-09).

@@ -8,7 +8,7 @@ Magento Open Source keeps abandoned carts and lists them under **Reports › Mar
 
 - **Reminders on your schedule**: send up to as many reminders as you like, e.g. 1, 24 and 72 hours after the shopper last changed the cart. If cron was down and several reminders are overdue, the shopper gets one email, not a burst.
 - **Guests and customers**: signed-in customers' carts qualify, and so do guest carts once the shopper has typed an email at checkout. No extra JavaScript is added.
-- **One click back to the cart**: guests land in their restored cart with the coupon already applied. Customers are asked to sign in first, because an email link never logs anyone in.
+- **One click back to the cart**: shoppers land in their restored cart with the coupon already applied. Customers with an account sign in first, because an email link never logs anyone in, and then go straight to their cart.
 - **Coupon for the hesitant**: add a single-use code, generated from a cart price rule you choose, to a chosen reminder (by default the third). One coupon per email address, not one per cart.
 - **Rich email**: product cards with image, name, quantity and row total, the cart subtotal, a highlighted coupon box and a **Return to your cart** button. Gifts from Tonyapps Free Gift show as *Free gift* instead of $0.00.
 - **Promotion Block**: show a CMS block of your choice in the email (a banner, a current offer), edited with the normal WYSIWYG editor, per store view.
@@ -36,7 +36,6 @@ Emails as sent (Luma theme, 2026-11-09).
 
 - Off by default. The reminder delays and maximum cart age are global settings; enable, sender, template, Promotion Block and coupon can be set per store.
 - No admin report for recovered carts yet; recovery numbers are read from the database.
-- Customer carts don't get the coupon applied automatically after sign-in; the code is in the email.
 - Guest emails are captured on the standard Luma checkout. The guest's email is saved before the order is placed, which your privacy notice should mention.
 - Requires Magento cron to be running.
 - Built and tested on the Luma theme; Hyvä has not been checked.

@@ -19,7 +19,8 @@ use Tonyapps\AbandonedCart\Model\ResourceModel\Reminder as ReminderResource;
 
 /**
  * "Return to your cart" link. Guest carts are put back into the session; customer carts never log anyone in
- * from an email link - the shopper signs in and core merges their saved cart as usual.
+ * from an email link - the shopper signs in, comes back to the link and core has their saved cart as usual.
+ * The coupon is applied in both cases.
  *
  * GET changes nothing: it renders a page that POSTs straight back (script, plus a button without it). Mail
  * scanners follow links but don't run scripts, so they can no longer apply the coupon or bump the cart's
@@ -62,10 +63,14 @@ class Restore implements HttpGetActionInterface, HttpPostActionInterface
 
         if ($quote->getCustomerId()) {
             if ((int) $this->customerSession->getCustomerId() !== (int) $quote->getCustomerId()) {
-                $this->customerSession->setBeforeAuthUrl($this->url->getUrl('checkout/cart'));
+                // Back to this link after sign-in, so the coupon is applied then.
+                $this->customerSession->setBeforeAuthUrl(
+                    $this->url->getUrl('abandonedcart/cart/restore', ['token' => $reminder['token']])
+                );
                 $this->messageManager->addNoticeMessage(__('Sign in to see your saved cart.'));
                 return $redirect->setPath('customer/account/login');
             }
+            $this->applyCoupon((int) $quote->getId(), (string) $reminder['coupon_code']);
         } elseif (!$this->customerSession->isLoggedIn()) {
             $this->checkoutSession->replaceQuote($quote);
             $this->applyCoupon((int) $quote->getId(), (string) $reminder['coupon_code']);
