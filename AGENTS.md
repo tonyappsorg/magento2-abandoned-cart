@@ -4,7 +4,7 @@ Read this before changing the module. Workspace-wide rules are in ../AGENTS.md.
 
 ## Status
 
-- Built 2026-10-23; package `tonyapps/module-abandoned-cart` 0.1.0.
+- Built 2026-10-23; package `tonyapps/module-abandoned-cart` 1.0.0.
 - 2026-10-30 review fixes done; 2026-11-09 email redesign, Promotion Block and guest-email capture done; 2026-11-11 default template ID renamed for the Email Designer (see Change history).
 - Scope rule: core already keeps the cart (`quote`) and lists abandoned carts under **Reports > Marketing > Abandoned Carts** but never emails anyone. This module adds the emails and nothing else.
 
