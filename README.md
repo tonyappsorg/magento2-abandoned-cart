@@ -38,9 +38,9 @@ Emails as sent (Luma theme, 2026-11-09).
 - No admin report for recovered carts yet; recovery numbers are read from the database.
 - Guest emails are captured on the standard Luma checkout. The guest's email is saved before the order is placed, which your privacy notice should mention.
 - Requires Magento cron to be running.
-- Built and tested on the Luma theme; Hyvä has not been checked.
 
 ## Requirements
+- Works with the Luma and Hyvä themes
 
 - Magento Open Source 2.4.8
 - PHP 8.3 or 8.4

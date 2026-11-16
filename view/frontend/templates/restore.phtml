@@ -7,8 +7,8 @@
       action="<?= $escaper->escapeUrl($block->getUrl('abandonedcart/cart/restore')) ?>">
     <input type="hidden" name="token" value="<?= $escaper->escapeHtmlAttr((string) $block->getRequest()->getParam('token')) ?>"/>
     <?= $block->getBlockHtml('formkey') ?>
-    <p><?= $escaper->escapeHtml(__('Taking you to your cart...')) ?></p>
-    <button type="submit" class="action primary"><span><?= $escaper->escapeHtml(__('Return to your cart')) ?></span></button>
+    <p class="mb-4"><?= $escaper->escapeHtml(__('Taking you to your cart...')) ?></p>
+    <button type="submit" class="action primary btn btn-primary"><span><?= $escaper->escapeHtml(__('Return to your cart')) ?></span></button>
 </form>
 <?= /* @noEscape */ $secureRenderer->renderTag(
     'script',

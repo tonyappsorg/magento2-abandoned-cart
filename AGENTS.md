@@ -77,7 +77,7 @@ Email template ID: `tonyapps_abandonedcart_email_template` (file `reminder.html`
 
 - No admin screen for recovery numbers; use SQL (Operations).
 - Guest email capture depends on checkout calling `isEmailAvailable` over REST (Luma does).
-- Hyvä not checked.
+- Hyvä: checked 2026-11-16 on the DDEV Hyvä store view; the storefront pages are server-rendered forms and work as-is, buttons carry Hyvä's `btn btn-primary` next to Luma's classes.
 
 ## Tests
 
@@ -102,6 +102,7 @@ SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 
 ## Change history
 
+- **2026-11-16** — Hyvä: token-page buttons get Hyvä's `btn btn-primary` next to the Luma classes (one template for both themes).
 - **2026-11-16** — Released as free software under GPL-3.0-or-later (owner decision): `LICENSE` added,
   `composer.json` license changed from `proprietary`, License section in the README.
 - **2026-11-15 storefront links in admin-sent emails**: Built in an admin request (including the Email Designer preview), `restoreUrl` and `unsubscribeUrl` came out as an admin link with a secret key, because `Store::getUrl()` uses the area's `UrlInterface`. `ReminderSender` now builds storefront links with its own non-shared `Magento\Framework\Url` (`frontendUrl`, `etc/di.xml`) scoped to the email's store; tests in `ReminderSenderTest`.
