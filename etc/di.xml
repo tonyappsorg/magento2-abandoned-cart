@@ -38,4 +38,23 @@
             </argument>
         </arguments>
     </type>
+    <!-- Tonyapps_EmailDesigner: real-data preview with a store's cart. Ignored without that module. -->
+    <type name="Tonyapps\EmailDesigner\Model\PreviewPool">
+        <arguments>
+            <argument name="providers" xsi:type="array">
+                <item name="abandonedcart" xsi:type="array">
+                    <item name="templates" xsi:type="array">
+                        <item name="0" xsi:type="string">tonyapps_abandonedcart_email_template</item>
+                    </item>
+                    <item name="provider" xsi:type="object">Tonyapps\AbandonedCart\Model\EmailPreview</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+    <!-- Own storefront URL builder for email links: not shared, so its setScope() never changes the shared one. -->
+    <type name="Tonyapps\AbandonedCart\Model\ReminderSender">
+        <arguments>
+            <argument name="frontendUrl" xsi:type="object" shared="false">Magento\Framework\Url</argument>
+        </arguments>
+    </type>
 </config>

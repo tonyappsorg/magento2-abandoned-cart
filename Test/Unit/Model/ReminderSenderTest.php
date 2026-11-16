@@ -9,6 +9,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Math\Random;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Framework\Url;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
 use Magento\Quote\Model\QuoteFactory;
@@ -92,6 +93,9 @@ class ReminderSenderTest extends TestCase
         self::assertSame('Luma', $vars['storeName']);
         self::assertSame('CODE', $vars['couponCode']);
         self::assertSame('cart-promo', $vars['promoBlockId']);
+        // From the storefront builder of the cart's store (setScope(1) is checked in sender()).
+        self::assertSame('https://shop/abandonedcart/cart/restore/token/t', $vars['restoreUrl']);
+        self::assertSame('https://shop/abandonedcart/cart/unsubscribe/token/t', $vars['unsubscribeUrl']);
     }
 
     private function item(string $name, float $qty, float $rowTotal, Product $product, bool $gift): QuoteItem
@@ -136,6 +140,13 @@ class ReminderSenderTest extends TestCase
         $storeManager = $this->createMock(StoreManagerInterface::class);
         $storeManager->method('getStores')->willReturn([$store]);
         $storeManager->method('getStore')->willReturn($store);
+        $store->expects(self::never())->method('getUrl');
+        $frontendUrl = $this->createMock(Url::class);
+        $frontendUrl->method('setScope')->with(1)->willReturnSelf();
+        $frontendUrl->method('getUrl')->willReturnCallback(static function (string $route, array $params): string {
+            self::assertTrue($params['_nosid']);
+            return 'https://shop/' . $route . '/token/' . $params['token'];
+        });
         if (!$transportBuilder) {
             // Stop right after the coupon decision; the send failure is logged and swallowed.
             $transportBuilder = $this->createMock(TransportBuilder::class);
@@ -155,7 +166,8 @@ class ReminderSenderTest extends TestCase
             $currency ?? $this->createMock(PriceCurrencyInterface::class),
             $this->createMock(Escaper::class),
             $this->createMock(LoggerInterface::class),
-            $image ?? $this->createMock(Image::class)
+            $image ?? $this->createMock(Image::class),
+            $frontendUrl
         );
     }
 }

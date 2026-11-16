@@ -26,6 +26,7 @@ Read this before changing the module. Workspace-wide rules are in ../AGENTS.md.
 - Email items: `items` (array of cards), FreeGift lines (item option `tonyapps_free_gift`) say *Free gift* instead of $0.00.
 - Guest email: `Plugin\SaveGuestEmailOnCart`, after-plugin on `Magento\Customer\Api\AccountManagementInterface::isEmailAvailable`, declared in `etc/webapi_rest/di.xml` only.
 - Email Designer (`etc/di.xml`, used only when `Tonyapps_EmailDesigner` is installed): blocks `abandonedcart_items`, `abandonedcart_subtotal`, `abandonedcart_promo`, `abandonedcart_coupon` (same markup as `reminder.html`) and the starter design `view/adminhtml/email_designer/reminder.mjml`. Keep them in step with `reminder.html` when the email changes.
+- Email Designer real-data preview: `Model\EmailPreview` (registered on `Tonyapps\EmailDesigner\Model\PreviewPool` in `etc/di.xml`, duck-typed). Records: the 20 newest active carts with items and an email, reminded or not (`ResourceModel\Reminder::getPreviewCarts()`, by cart ID). Variables come from `ReminderSender::templateVars()` (also used by the sender) in the cart's store emulation, for the cart's next reminder (`sent_count` + 1, coupon decided by `ReminderSender::couponDue()`). Read-only: carts without a reminder row get the placeholder token `preview` (links show "no longer valid"); where a coupon would be minted, the email's existing coupon or else the placeholder `PREVIEW10` is shown. `getStoreId()` returns the cart's store, so the designer renders and test-sends from it.
 - Layout/templates: `abandonedcart_cart_restore.xml` + `restore.phtml`, `abandonedcart_cart_unsubscribe.xml` + `unsubscribe.phtml`, email `view/frontend/email/reminder.html`.
 - Data patch `Setup\Patch\Data\CopyUnsubscribedEmails` copies existing status-2 emails into the opt-out table.
 - Soft link to Tonyapps_FreeGift (item option name only, no dependency).
@@ -84,7 +85,7 @@ Email template ID: `tonyapps_abandonedcart_email_template` (file `reminder.html`
 vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist app/code/Tonyapps/AbandonedCart/Test/Unit
 ```
 
-Unit tests cover Restore, PromoBlock source, ReminderSchedule, ReminderSender, Reminder resource, SaveGuestEmailOnCart, CopyUnsubscribedEmails, and the reminder email / restore templates. Also covered elsewhere in the workspace: `../EmailDesigner/Test/Integration/Model/ModuleEmailsTest.php` (template setting) and Playwright `../e2e/tests/abandoned-cart.spec.js` (helper `../e2e/abandoned.php`).
+Unit tests cover Restore, PromoBlock source, ReminderSchedule, ReminderSender, EmailPreview, Reminder resource, SaveGuestEmailOnCart, CopyUnsubscribedEmails, and the reminder email / restore templates. Also covered elsewhere in the workspace: `../EmailDesigner/Test/Integration/Model/ModuleEmailsTest.php` (template setting) and Playwright `../e2e/tests/abandoned-cart.spec.js` (helper `../e2e/abandoned.php`).
 
 ## Operations
 
@@ -101,6 +102,8 @@ SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 
 ## Change history
 
+- **2026-11-15 storefront links in admin-sent emails**: Built in an admin request (including the Email Designer preview), `restoreUrl` and `unsubscribeUrl` came out as an admin link with a secret key, because `Store::getUrl()` uses the area's `UrlInterface`. `ReminderSender` now builds storefront links with its own non-shared `Magento\Framework\Url` (`frontendUrl`, `etc/di.xml`) scoped to the email's store; tests in `ReminderSenderTest`.
+- **2026-11-15 Email Designer real-data preview**: `Model\EmailPreview` (see Architecture). The reminder's template variables moved from `process()` into `ReminderSender::templateVars()` and the coupon condition into `couponDue()`, both used by the sender and the preview. Tests in `EmailPreviewTest` (preview vars equal the sender's; nothing written).
 - **2026-11-13 Email Designer blocks and starter design** (see Architecture).
 - **2026-11-13 coupon for customer carts**: the coupon was applied only to guest carts. The cart's owner now gets it too: signed in already, it is applied at once; signed out, the sign-in page sends them back to the restore link (before-auth URL), which applies it. Tests in `RestoreTest`.
 - **2026-11-11 template ID rename**: the default template ID is `tonyapps_abandonedcart_email_template` (was `tonyapps_abandonedcart_reminder`). The template setting lists the default under an ID made from its config path, so the old ID made the setting fail with "Email template is not defined" and no other template could be picked (blocking Email Designer designs). Theme overrides keep working (they go by file name).

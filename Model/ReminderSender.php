@@ -9,6 +9,7 @@ use Magento\Framework\Escaper;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Math\Random;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Framework\Url;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\SalesRule\Model\CouponGenerator;
@@ -39,7 +40,9 @@ class ReminderSender
         private readonly PriceCurrencyInterface $priceCurrency,
         private readonly Escaper $escaper,
         private readonly LoggerInterface $logger,
-        private readonly Image $imageHelper
+        private readonly Image $imageHelper,
+        // Storefront URL builder: the injected UrlInterface is the admin one in admin requests (links get the admin path and a secret key).
+        private readonly Url $frontendUrl
     ) {
     }
 
@@ -110,9 +113,7 @@ class ReminderSender
         }
 
         $couponCode = (string) $row['coupon_code'];
-        $couponStep = $this->helper->getCouponStep($storeId);
-        // ">=": after a cron outage dueStep() skips straight to the latest reminder, past the coupon step.
-        if ($couponCode === '' && $couponStep > 0 && $step + 1 >= $couponStep) {
+        if ($this->couponDue($couponCode, $step, $storeId)) {
             $couponCode = $this->reminderResource->getEmailCoupon($email) ?: $this->generateCoupon($storeId);
             if ($couponCode !== '') {
                 // Saved before sending so a failed send retries with the same code instead of minting another.
@@ -120,23 +121,12 @@ class ReminderSender
             }
         }
 
-        $store = $this->storeManager->getStore($storeId);
-        $unsubscribeUrl = $store->getUrl('abandonedcart/cart/unsubscribe', ['token' => $token, '_nosid' => true]);
+        $vars = $this->templateVars($row, $quote, $token, $couponCode, $storeId);
+        $unsubscribeUrl = $vars['unsubscribeUrl'];
         $transport = $this->transportBuilder
             ->setTemplateIdentifier($this->helper->getTemplate($storeId))
             ->setTemplateOptions(['area' => Area::AREA_FRONTEND, 'store' => $storeId])
-            ->setTemplateVars([
-                'customerName' => (string) $row['customer_firstname'] !== '' ? (string) $row['customer_firstname'] : (string) __('there'),
-                // Kept for templates customised before the item cards existed.
-                'itemsHtml' => $this->renderItems($quote, $storeId),
-                'items' => $this->items($quote, $storeId),
-                'subtotal' => $this->formatPrice((float) $quote->getSubtotal(), $quote, $storeId),
-                'storeName' => (string) $store->getFrontendName(),
-                'promoBlockId' => $this->helper->getPromoBlock($storeId),
-                'restoreUrl' => $store->getUrl('abandonedcart/cart/restore', ['token' => $token, '_nosid' => true]),
-                'unsubscribeUrl' => $unsubscribeUrl,
-                'couponCode' => $couponCode,
-            ])
+            ->setTemplateVars($vars)
             ->setFromByScope($this->helper->getIdentity($storeId), $storeId)
             ->addTo($email)
             ->getTransport();
@@ -147,6 +137,40 @@ class ReminderSender
         $transport->sendMessage();
 
         $this->reminderResource->markSent($reminderId, $step + 1);
+    }
+
+    /** Whether reminder $step (0-based) should carry a coupon the cart doesn't have yet. */
+    public function couponDue(string $couponCode, int $step, int $storeId): bool
+    {
+        $couponStep = $this->helper->getCouponStep($storeId);
+        // ">=": after a cron outage dueStep() skips straight to the latest reminder, past the coupon step.
+        return $couponCode === '' && $couponStep > 0 && $step + 1 >= $couponStep;
+    }
+
+    /**
+     * The reminder's template variables. Shared with the Email Designer preview (Model\EmailPreview); call it in the
+     * cart's store emulation, as send() does.
+     *
+     * @param array<string, mixed> $row a getCandidates() row (customer_firstname is used)
+     * @return array<string, mixed>
+     */
+    public function templateVars(array $row, Quote $quote, string $token, string $couponCode, int $storeId): array
+    {
+        $store = $this->storeManager->getStore($storeId);
+        return [
+            'customerName' => (string) $row['customer_firstname'] !== '' ? (string) $row['customer_firstname'] : (string) __('there'),
+            // Kept for templates customised before the item cards existed.
+            'itemsHtml' => $this->renderItems($quote, $storeId),
+            'items' => $this->items($quote, $storeId),
+            'subtotal' => $this->formatPrice((float) $quote->getSubtotal(), $quote, $storeId),
+            'storeName' => (string) $store->getFrontendName(),
+            'promoBlockId' => $this->helper->getPromoBlock($storeId),
+            'restoreUrl' => $this->frontendUrl->setScope($storeId)
+                ->getUrl('abandonedcart/cart/restore', ['token' => $token, '_nosid' => true]),
+            'unsubscribeUrl' => $this->frontendUrl->setScope($storeId)
+                ->getUrl('abandonedcart/cart/unsubscribe', ['token' => $token, '_nosid' => true]),
+            'couponCode' => $couponCode,
+        ];
     }
 
     private function generateCoupon(int $storeId): string

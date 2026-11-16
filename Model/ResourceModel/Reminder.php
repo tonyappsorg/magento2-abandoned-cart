@@ -82,6 +82,38 @@ class Reminder extends AbstractDb
         return $connection->fetchAll($select);
     }
 
+    /**
+     * Read-only, for the Email Designer preview: active carts with items and an email, reminded or not, newest
+     * first (by cart ID), with the same columns as getCandidates(). $quoteId picks one cart.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getPreviewCarts(int $limit, ?int $quoteId = null): array
+    {
+        $connection = $this->getConnection();
+        $select = $connection->select()
+            ->from(
+                ['q' => $this->getTable('quote')],
+                ['quote_id' => 'entity_id', 'store_id', 'customer_email', 'customer_firstname', 'updated_at']
+            )
+            ->joinLeft(
+                ['r' => $this->getMainTable()],
+                'r.quote_id = q.entity_id',
+                ['reminder_id' => 'entity_id', 'sent_count', 'token', 'coupon_code']
+            )
+            ->where('q.is_active = 1')
+            ->where('q.items_count > 0')
+            ->where("q.customer_email IS NOT NULL AND q.customer_email <> ''")
+            // Primary key, not updated_at: quote can be huge and this walks it backwards until $limit rows match.
+            ->order('q.entity_id DESC')
+            ->limit($limit);
+        if ($quoteId !== null) {
+            $select->where('q.entity_id = ?', $quoteId);
+        }
+
+        return $connection->fetchAll($select);
+    }
+
     public function create(int $quoteId, string $email, int $storeId, string $token): int
     {
         $this->getConnection()->insert($this->getMainTable(), [
