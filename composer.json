@@ -2,7 +2,7 @@
     "name": "tonyapps/module-abandoned-cart",
     "description": "Abandoned cart reminder emails with one-click cart restore, optional coupon, and recovery tracking.",
     "type": "magento2-module",
-    "license": "proprietary",
+    "license": "GPL-3.0-or-later",
     "require": {
         "php": "~8.3.0||~8.4.0",
         "magento/framework": "*",

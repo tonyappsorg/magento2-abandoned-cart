@@ -102,6 +102,8 @@ SELECT status, COUNT(*) FROM tonyapps_abandonedcart_reminder GROUP BY status;
 
 ## Change history
 
+- **2026-11-16** — Released as free software under GPL-3.0-or-later (owner decision): `LICENSE` added,
+  `composer.json` license changed from `proprietary`, License section in the README.
 - **2026-11-15 storefront links in admin-sent emails**: Built in an admin request (including the Email Designer preview), `restoreUrl` and `unsubscribeUrl` came out as an admin link with a secret key, because `Store::getUrl()` uses the area's `UrlInterface`. `ReminderSender` now builds storefront links with its own non-shared `Magento\Framework\Url` (`frontendUrl`, `etc/di.xml`) scoped to the email's store; tests in `ReminderSenderTest`.
 - **2026-11-15 Email Designer real-data preview**: `Model\EmailPreview` (see Architecture). The reminder's template variables moved from `process()` into `ReminderSender::templateVars()` and the coupon condition into `couponDue()`, both used by the sender and the preview. Tests in `EmailPreviewTest` (preview vars equal the sender's; nothing written).
 - **2026-11-13 Email Designer blocks and starter design** (see Architecture).
